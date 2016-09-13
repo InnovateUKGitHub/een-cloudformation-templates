@@ -1,0 +1,260 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "CloudWatch Billing Alarms",
+    "Parameters": {
+        "NotificationEMail": {
+            "Description": "Email address to notify when billing alerts are triggered",
+            "Default": "een@aerian.com",
+            "Type": "String",
+            "AllowedPattern": "([a-zA-Z0-9_\\-\\.]+)@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.)|(([a-zA-Z0-9\\-]+\\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\\]?)",
+            "ConstraintDescription": "must be a valid email address."
+        }
+    },
+    "Mappings": {
+    },
+    "Resources": {
+        "SNSBillingAlarmNotificationTopic": {
+            "Type": "AWS::SNS::Topic",
+            "Properties": {
+                "Subscription": [{
+                        "Endpoint": {
+                            "Ref": "NotificationEMail"
+                        },
+                        "Protocol": "email"
+                    }]
+            }
+        },
+        "CloudWatchBillingAlarm100": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "AlarmDescription": "Alarm if AWS spending is over $100",
+                "Namespace": "AWS/Billing",
+                "MetricName": "EstimatedCharges",
+                "Dimensions": [{
+                        "Name": "Currency",
+                        "Value": "USD"
+                    }],
+                "Statistic": "Maximum",
+                "Period": "21600",
+                "EvaluationPeriods": "1",
+                "Threshold": "100",
+                "ComparisonOperator": "GreaterThanThreshold",
+                "AlarmActions": [{
+                        "Ref": "SNSBillingAlarmNotificationTopic"
+                    }],
+                "InsufficientDataActions": [{
+                        "Ref": "SNSBillingAlarmNotificationTopic"
+                    }]
+            }
+        },
+        "CloudWatchBillingAlarm200": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "AlarmDescription": "Alarm if AWS spending is over $200",
+                "Namespace": "AWS/Billing",
+                "MetricName": "EstimatedCharges",
+                "Dimensions": [{
+                        "Name": "Currency",
+                        "Value": "USD"
+                    }],
+                "Statistic": "Maximum",
+                "Period": "21600",
+                "EvaluationPeriods": "1",
+                "Threshold": "200",
+                "ComparisonOperator": "GreaterThanThreshold",
+                "AlarmActions": [{
+                        "Ref": "SNSBillingAlarmNotificationTopic"
+                    }],
+                "InsufficientDataActions": [{
+                        "Ref": "SNSBillingAlarmNotificationTopic"
+                    }]
+            }
+        },
+        "CloudWatchBillingAlarm300": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "AlarmDescription": "Alarm if AWS spending is over $300",
+                "Namespace": "AWS/Billing",
+                "MetricName": "EstimatedCharges",
+                "Dimensions": [{
+                        "Name": "Currency",
+                        "Value": "USD"
+                    }],
+                "Statistic": "Maximum",
+                "Period": "21600",
+                "EvaluationPeriods": "1",
+                "Threshold": "300",
+                "ComparisonOperator": "GreaterThanThreshold",
+                "AlarmActions": [{
+                        "Ref": "SNSBillingAlarmNotificationTopic"
+                    }],
+                "InsufficientDataActions": [{
+                        "Ref": "SNSBillingAlarmNotificationTopic"
+                    }]
+            }
+        },
+        "CloudWatchBillingAlarm400": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "AlarmDescription": "Alarm if AWS spending is over $400",
+                "Namespace": "AWS/Billing",
+                "MetricName": "EstimatedCharges",
+                "Dimensions": [{
+                        "Name": "Currency",
+                        "Value": "USD"
+                    }],
+                "Statistic": "Maximum",
+                "Period": "21600",
+                "EvaluationPeriods": "1",
+                "Threshold": "400",
+                "ComparisonOperator": "GreaterThanThreshold",
+                "AlarmActions": [{
+                        "Ref": "SNSBillingAlarmNotificationTopic"
+                    }],
+                "InsufficientDataActions": [{
+                        "Ref": "SNSBillingAlarmNotificationTopic"
+                    }]
+            }
+        },
+        "CloudWatchBillingAlarm500": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "AlarmDescription": "Alarm if AWS spending is over $500",
+                "Namespace": "AWS/Billing",
+                "MetricName": "EstimatedCharges",
+                "Dimensions": [{
+                        "Name": "Currency",
+                        "Value": "USD"
+                    }],
+                "Statistic": "Maximum",
+                "Period": "21600",
+                "EvaluationPeriods": "1",
+                "Threshold": "500",
+                "ComparisonOperator": "GreaterThanThreshold",
+                "AlarmActions": [{
+                        "Ref": "SNSBillingAlarmNotificationTopic"
+                    }],
+                "InsufficientDataActions": [{
+                        "Ref": "SNSBillingAlarmNotificationTopic"
+                    }]
+            }
+        },
+        "CloudWatchBillingAlarm600": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "AlarmDescription": "Alarm if AWS spending is over $600",
+                "Namespace": "AWS/Billing",
+                "MetricName": "EstimatedCharges",
+                "Dimensions": [{
+                        "Name": "Currency",
+                        "Value": "USD"
+                    }],
+                "Statistic": "Maximum",
+                "Period": "21600",
+                "EvaluationPeriods": "1",
+                "Threshold": "600",
+                "ComparisonOperator": "GreaterThanThreshold",
+                "AlarmActions": [{
+                        "Ref": "SNSBillingAlarmNotificationTopic"
+                    }],
+                "InsufficientDataActions": [{
+                        "Ref": "SNSBillingAlarmNotificationTopic"
+                    }]
+            }
+        },
+        "CloudWatchBillingAlarm700": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "AlarmDescription": "Alarm if AWS spending is over $700",
+                "Namespace": "AWS/Billing",
+                "MetricName": "EstimatedCharges",
+                "Dimensions": [{
+                        "Name": "Currency",
+                        "Value": "USD"
+                    }],
+                "Statistic": "Maximum",
+                "Period": "21600",
+                "EvaluationPeriods": "1",
+                "Threshold": "700",
+                "ComparisonOperator": "GreaterThanThreshold",
+                "AlarmActions": [{
+                        "Ref": "SNSBillingAlarmNotificationTopic"
+                    }],
+                "InsufficientDataActions": [{
+                        "Ref": "SNSBillingAlarmNotificationTopic"
+                    }]
+            }
+        },
+        "CloudWatchBillingAlarm800": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "AlarmDescription": "Alarm if AWS spending is over $800",
+                "Namespace": "AWS/Billing",
+                "MetricName": "EstimatedCharges",
+                "Dimensions": [{
+                        "Name": "Currency",
+                        "Value": "USD"
+                    }],
+                "Statistic": "Maximum",
+                "Period": "21600",
+                "EvaluationPeriods": "1",
+                "Threshold": "800",
+                "ComparisonOperator": "GreaterThanThreshold",
+                "AlarmActions": [{
+                        "Ref": "SNSBillingAlarmNotificationTopic"
+                    }],
+                "InsufficientDataActions": [{
+                        "Ref": "SNSBillingAlarmNotificationTopic"
+                    }]
+            }
+        },
+        "CloudWatchBillingAlarm900": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "AlarmDescription": "Alarm if AWS spending is over $900",
+                "Namespace": "AWS/Billing",
+                "MetricName": "EstimatedCharges",
+                "Dimensions": [{
+                        "Name": "Currency",
+                        "Value": "USD"
+                    }],
+                "Statistic": "Maximum",
+                "Period": "21600",
+                "EvaluationPeriods": "1",
+                "Threshold": "900",
+                "ComparisonOperator": "GreaterThanThreshold",
+                "AlarmActions": [{
+                        "Ref": "SNSBillingAlarmNotificationTopic"
+                    }],
+                "InsufficientDataActions": [{
+                        "Ref": "SNSBillingAlarmNotificationTopic"
+                    }]
+            }
+        },
+        "CloudWatchBillingAlarm1000": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "AlarmDescription": "Alarm if AWS spending is over $1000",
+                "Namespace": "AWS/Billing",
+                "MetricName": "EstimatedCharges",
+                "Dimensions": [{
+                        "Name": "Currency",
+                        "Value": "USD"
+                    }],
+                "Statistic": "Maximum",
+                "Period": "21600",
+                "EvaluationPeriods": "1",
+                "Threshold": "1000",
+                "ComparisonOperator": "GreaterThanThreshold",
+                "AlarmActions": [{
+                        "Ref": "SNSBillingAlarmNotificationTopic"
+                    }],
+                "InsufficientDataActions": [{
+                        "Ref": "SNSBillingAlarmNotificationTopic"
+                    }]
+            }
+        }
+    },
+    "Outputs": {
+    }
+}

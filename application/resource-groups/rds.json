@@ -1,0 +1,189 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "RDS and deps",
+    "Parameters": {
+        "ProjectName": {
+            "Type": "String",
+            "Description": "The project name to be used",
+            "Default": "een"
+        },
+        "EnvironmentName": {
+            "Type": "String",
+            "Description": "The environment name to be used",
+            "Default": "production"
+        },
+        "ApplicationEnv": {
+            "Type": "String",
+            "Description": "The APPLICATION_ENV to be used",
+            "Default": "production_een_aws"
+        },
+        "LayerName": {
+            "Type": "String",
+            "Description": "The name of the layer e.g. layer1",
+            "Default": "layer1"
+        },
+        "SubnetCidrBlock": {
+            "Type": "String",
+            "Description": "The SubnetCidrBlock"
+        },
+        "VpcId": {
+            "Type": "String",
+            "Description": "The ID of the VPC"
+        },
+        "SubnetAId": {
+            "Type": "String",
+            "Description": "The ID of SubnetA",
+            "Default": "subnet-71212514"
+        },
+        "SubnetBId": {
+            "Type": "String",
+            "Description": "The ID of SubnetB",
+            "Default": "subnet-71212514"
+        },
+        "DBName": {
+            "Default": "een",
+            "Description": "The layer 3 database name",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "64",
+            "AllowedPattern": "[a-zA-Z][a-zA-Z0-9]*",
+            "ConstraintDescription": "must begin with a letter and contain only alphanumeric characters."
+        },
+        "DBClass": {
+            "Default": "db.m1.small",
+            "Description": "The layer 3 database instance class",
+            "Type": "String",
+            "AllowedValues": [
+                "db.m1.small",
+                "db.t2.medium",
+                "db.m3.medium",
+                "db.m3.large",
+                "db.m3.xlarge",
+                "db.m3.2xlarge"
+            ],
+            "ConstraintDescription": "must select a valid database instance type."
+        },
+        "DBUsername": {
+            "Default": "DB_USERNAME",
+            "Description": "The layer 3 database admin account username",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "16",
+            "AllowedPattern": "[a-zA-Z][a-zA-Z0-9]*",
+            "ConstraintDescription": "must begin with a letter and contain only alphanumeric characters."
+        },
+        "DBPassword": {
+            "Default": "CHANGE_TO_DB_DEFAULT_PASSWORD",
+            "Description": "The layer 3 database admin account password",
+            "Type": "String",
+            "MinLength": "8",
+            "MaxLength": "41",
+            "AllowedPattern": "[a-zA-Z0-9]*",
+            "ConstraintDescription": "must contain only alphanumeric characters."
+        },
+        "DBAllocatedStorage": {
+            "Default": "100",
+            "Description": "The size of the layer 3 database (Gb)",
+            "Type": "Number",
+            "MinValue": "5",
+            "MaxValue": "1024",
+            "ConstraintDescription": "must be between 5 and 1024Gb."
+        }
+    },
+    "Mappings": {
+    },
+    "Conditions": {
+    },
+    "Resources": {
+        "DBInstanceSubnetGroup": {
+            "Type": "AWS::RDS::DBSubnetGroup",
+            "Properties": {
+                "DBSubnetGroupDescription": {
+                    "Fn::Join": ["-", [
+                            "rds-subnetgroup", 
+                            {
+                                "Ref": "LayerName"
+                            },
+                            {
+                                "Ref": "EnvironmentName"
+                            },
+                            {
+                                "Ref": "ProjectName"
+                            }]]
+                },
+                "SubnetIds": [
+                    {
+                        "Ref": "SubnetAId"
+                    },
+                    {
+                        "Ref": "SubnetBId"
+                    }
+                ]
+            }
+        },
+        "DBInstanceSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Security group for RDS DB Instances.",
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "3306",
+                        "ToPort": "3306",
+                        "CidrIp": {
+                            "Ref": "SubnetCidrBlock"
+                        }
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "3306",
+                        "ToPort": "3306",
+                        "CidrIp": "20.20.0.0/16"
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "VpcId"
+                }
+            }
+        },
+        "DBInstance": {
+            "Type": "AWS::RDS::DBInstance",
+            "Properties": {
+                "DBName": {
+                    "Ref": "DBName"
+                },
+                "Engine": "MySQL",
+                "EngineVersion": "5.6.22",
+                "MasterUsername": {
+                    "Ref": "DBUsername"
+                },
+                "DBInstanceClass": {
+                    "Ref": "DBClass"
+                },
+                "AllocatedStorage": {
+                    "Ref": "DBAllocatedStorage"
+                },
+                "MasterUserPassword": {
+                    "Ref": "DBPassword"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "Master MySQL Database"
+                    }
+                ],
+                "VPCSecurityGroups": [{
+                        "Ref": "DBInstanceSecurityGroup"
+                    }],
+                "DBSubnetGroupName": {
+                    "Ref": "DBInstanceSubnetGroup"
+                },
+                "BackupRetentionPeriod": "7"
+            },
+            "DeletionPolicy": "Snapshot"
+        }
+    },
+    "Outputs": {
+        
+    }
+}

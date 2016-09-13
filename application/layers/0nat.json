@@ -1,0 +1,136 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Layer 1 resources, Subnet x 2, Nat Gateway x 2 & Internet Gateway x 1",
+    "Parameters": {
+        "VpcId": {
+            "Type": "String",
+            "Description": "The ID of the VPC",
+            "Default": "vpc-30297455"
+        },
+        "vpcCidrPrefix": {
+            "Type": "String",
+            "Description": "The network part of the vpcCidrBlock. e.g. 10.10.",
+            "Default": ""
+        },
+        "PublicHostedZoneID": {
+            "Type": "String",
+            "Description": "The Route53 public hosted zone id",
+            "Default": "Z1QPR82ZQ4HWL9"
+        },
+        "ProjectName": {
+            "Type": "String",
+            "Description": "The project name to be used",
+            "Default": "een"
+        },
+        "EnvironmentName": {
+            "Type": "String",
+            "Description": "The environment name to be used",
+            "Default": "production"
+        },
+        "ApplicationEnv": {
+            "Type": "String",
+            "Description": "The APPLICATION_ENV to be used",
+            "Default": "production_een_aws"
+        },        
+        "LayerName": {
+            "Type": "String",
+            "Description": "The name to be used for the first layer",
+            "Default": "layer0"
+        },
+        "Subnet1CidrBlock": {
+            "Type": "String",
+            "Description": "The subnet CidrBlock to cover access to all AZ subnets",
+            "Default": "0.0/24"
+        },
+        "Subnet1aCidrBlock": {
+            "Type": "String",
+            "Description": "The subnet CidrBlock for AZ a",
+            "Default": "0.0/26"
+        },
+        "Subnet1bCidrBlock": {
+            "Type": "String",
+            "Description": "The subnet CidrBlock for AZ b",
+            "Default": "0.64/26"
+        },
+        "ManagementVPCPeeringConnectionId": {
+            "Type": "String",
+            "Description": "The id of the ManagementVPCPeeringConnection",
+            "Default": "pcx-96ff2bff"
+        },
+        "InternetGatewayId": {
+            "Type": "String",
+            "Description": "The ID of the Internet Gateway",
+            "Default": ""
+        }
+    },
+    "Resources": {
+        "subnet1a" : {
+            "Type" : "AWS::CloudFormation::Stack",
+            "Properties" : {
+                "TemplateURL" : "https://s3-eu-west-1.amazonaws.com/cloudformations-een-shared/een-v1/develop/application/resource-groups/subnets/public.json",
+                "TimeoutInMinutes" : "60",
+                "Parameters": {
+                    "ProjectName": { "Ref" : "ProjectName" },
+                    "EnvironmentName": { "Ref" : "EnvironmentName" },
+                    "ApplicationEnv": { "Ref" : "ApplicationEnv" },
+                    "VpcId": { "Ref" : "VpcId" },
+                    "InternetGatewayId": { "Ref" : "InternetGatewayId" },
+                    "ManagementVPCPeeringConnectionId": { "Ref" : "ManagementVPCPeeringConnectionId" },
+                    "LayerName": { "Ref" : "LayerName" },
+                    "CidrBlock": { "Fn::Join": ["",[ { "Ref": "vpcCidrPrefix" }, { "Ref" : "Subnet1aCidrBlock" } ]] },
+                    "AvailabilityZone": "eu-west-1a",
+                    "Name": "subnet1a"
+                }
+            }
+        },
+        "subnet1b" : {
+            "Type" : "AWS::CloudFormation::Stack",
+            "Properties" : {
+                "TemplateURL" : "https://s3-eu-west-1.amazonaws.com/cloudformations-een-shared/een-v1/develop/application/resource-groups/subnets/public.json",
+                "TimeoutInMinutes" : "60",
+                "Parameters": {
+                    "ProjectName": { "Ref" : "ProjectName" },
+                    "EnvironmentName": { "Ref" : "EnvironmentName" },
+                    "ApplicationEnv": { "Ref" : "ApplicationEnv" },
+                    "VpcId": { "Ref" : "VpcId" },
+                    "InternetGatewayId": { "Ref" : "InternetGatewayId" },
+                    "ManagementVPCPeeringConnectionId": { "Ref" : "ManagementVPCPeeringConnectionId" },
+                    "LayerName": { "Ref" : "LayerName" },
+                    "CidrBlock": { "Fn::Join": ["",[ { "Ref": "vpcCidrPrefix" }, { "Ref" : "Subnet1bCidrBlock" } ]] },
+                    "AvailabilityZone": "eu-west-1b",
+                    "Name": "subnet1b"
+                }
+            }
+        },
+        "nat1a" : {
+            "Type" : "AWS::CloudFormation::Stack",
+            "Properties" : {
+                "TemplateURL" : "https://s3-eu-west-1.amazonaws.com/cloudformations-een-shared/een-v1/develop/application/resource-groups/nat-gateway.json",
+                "TimeoutInMinutes" : "60",
+                "Parameters": {
+                    "SubnetId" : { "Fn::GetAtt" : [ "subnet1a", "Outputs.SubnetId" ] }
+                }
+            }
+        },
+        "nat1b" : {
+            "Type" : "AWS::CloudFormation::Stack",
+            "Properties" : {
+                "TemplateURL" : "https://s3-eu-west-1.amazonaws.com/cloudformations-een-shared/een-v1/develop/application/resource-groups/nat-gateway.json",
+                "TimeoutInMinutes" : "60",
+                "Parameters": {
+                    "SubnetId" : { "Fn::GetAtt" : [ "subnet1b", "Outputs.SubnetId" ] }
+                }
+            }
+        }
+    },
+    "Outputs": {
+        "NatGatewayAId": {
+            "Description": "The ID of NatGatewayA",
+            "Value": { "Fn::GetAtt" : [ "nat1a", "Outputs.NatGatewayId" ] }
+        },
+        "NatGatewayBId": {
+            "Description": "The ID of NatGatewayB",
+            "Value": { "Fn::GetAtt" : [ "nat1b", "Outputs.NatGatewayId" ] }
+        }
+    }
+}

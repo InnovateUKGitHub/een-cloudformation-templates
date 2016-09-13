@@ -1,0 +1,74 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Resources shared between stacks, HostedZones, IAM users/roles & Certificates",
+    "Parameters": {
+        "HostedZoneName": {
+            "Type": "String",
+            "Description": "The Public HostedZoneName e.g. een.co.uk (ready for www.een.co.uk and stage.een.co.uk)",
+            "Default": "een.co.uk"
+        },
+        "ProjectName": {
+            "Type": "String",
+            "Description": "The project name to be used",
+            "Default": "een"
+        }
+    },
+    "Resources": {
+        "HostedZone1": {
+            "Type": "AWS::Route53::HostedZone",
+            "Properties": {
+                "HostedZoneConfig": {
+                    "Comment": "Main public hosted zone for een.co.uk"
+                },
+                "Name": {
+                    "Ref": "HostedZoneName"
+                },
+                "HostedZoneTags": [{
+                        "Key": "Name",
+                        "Value": "MainHostedZone"
+                    }]
+            }
+        },
+        "RecordSetGroup1ForHostedZone1": {
+            "Type": "AWS::Route53::RecordSetGroup",
+            "Properties": {
+                "HostedZoneId": {
+                    "Ref": "HostedZone1"
+                },
+                "RecordSets": [
+                    {
+                        "Name": {
+                            "Ref": "HostedZoneName"
+                        },
+                        "Type": "MX",
+                        "TTL": "3600",
+                        "ResourceRecords": [
+                            "1 ASPMX.L.GOOGLE.COM",
+                            "5 ALT1.ASPMX.L.GOOGLE.COM",
+                            "5 ALT2.ASPMX.L.GOOGLE.COM",
+                            "10 ALT3.ASPMX.L.GOOGLE.COM",
+                            "10 ALT4.ASPMX.L.GOOGLE.COM"
+                        ]
+                    }
+                ]
+            }
+        },
+        "S3BucketCloudFormations": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+                "AccessControl": "Private",
+                "BucketName": {
+                    "Fn::Join": ["-", [
+                            "cloudformations",
+                            {
+                                "Ref": "ProjectName"
+                            },
+                            "shared"]]
+                }
+            },
+            "DeletionPolicy": "Retain"
+        }
+    },
+    "Outputs": {
+    }
+}

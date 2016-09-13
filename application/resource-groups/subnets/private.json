@@ -1,0 +1,221 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Subnet, Route Table, Management VPCPeering Route & Nat Gateway Route (optional)",
+    "Parameters": {
+        "ProjectName": {
+            "Type": "String",
+            "Description": "The project name to be used",
+            "Default": "een"
+        },
+        "EnvironmentName": {
+            "Type": "String",
+            "Description": "The environment name to be used",
+            "Default": "production"
+        },
+        "ApplicationEnv": {
+            "Type": "String",
+            "Description": "The APPLICATION_ENV to be used",
+            "Default": "production_een_aws"
+        },
+        "CidrBlock": {
+            "Type": "String",
+            "Description": "The subnet CidrBlock",
+            "Default": "10.10.1.0/26"
+        },
+        "LayerName": {
+            "Type": "String",
+            "Description": "The name of the layer e.g. layer1",
+            "Default": "layer1"
+        },
+        "VpcId": {
+            "Type": "String",
+            "Description": "The ID of the VPC",
+            "Default": "vpc-30297455"
+        },
+        "NatGatewayId": {
+            "Type": "String",
+            "Description": "The ID of the NAT Gateway.",
+            "Default": "false"
+        },
+        "AvailabilityZone": {
+            "Type": "String",
+            "Description": "The availability zone the subnet should be placed in.",
+            "Default": "eu-west-1a"
+        },
+        "Name": {
+            "Type": "String",
+            "Description": "The project name to be used",
+            "Default": "subnet1"
+        },
+        "ManagementVPCPeeringConnectionId": {
+            "Type": "String",
+            "Description": "The id of the ManagementVPCPeeringConnection",
+            "Default": "pcx-96ff2bff"
+        },
+        "ManagementVPCPeeringConnectionCidrBlock": {
+            "Type": "String",
+            "Description": "The Cidr block of the ManagementVPCPeeringConnection",
+            "Default": "20.20.0.0/16"
+        },
+        "AuthenticationVPCPeeringConnectionId": {
+            "Type": "String",
+            "Description": "The id of the AuthenticationVPCPeeringConnection",
+            "Default": ""
+        },
+        "AuthenticationVPCPeeringConnectionCidrBlock": {
+            "Type": "String",
+            "Description": "The Cidr block of the AuthenticationVPCPeeringConnection",
+            "Default": ""
+        }
+    },
+    "Mappings": {
+    },
+    "Conditions": {
+        "NeedsNatGatewayRoute": {
+            "Fn::Not" : [{
+                "Fn::Equals" : [ {"Ref" : "NatGatewayId"}, "false" ]
+            }]   
+        },
+        "NeedsAuthVpcPeering": {
+            "Fn::Not": [{
+                "Fn::Equals": [{
+                    "Ref": "AuthenticationVPCPeeringConnectionId"
+                }, ""]
+            }]
+        }
+    },
+    "Resources": {
+        "Subnet": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VpcId"
+                },
+                "CidrBlock": {
+                    "Ref": "CidrBlock"
+                },
+                "AvailabilityZone": {
+                    "Ref": "AvailabilityZone"
+                },
+                "Tags": [{
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": ["-", [
+                                    {
+                                        "Ref": "Name"
+                                    },
+                                    {
+                                        "Ref": "LayerName"
+                                    },
+                                    {
+                                        "Ref": "EnvironmentName"
+                                    },
+                                    {
+                                        "Ref": "ProjectName"
+                                    }]]
+                        }
+                    }],
+                "MapPublicIpOnLaunch": "false"
+            }
+        },
+        "RouteTable": {
+            "Type": "AWS::EC2::RouteTable",
+            "Metadata": {
+                "Comment" : "Route table for subnet.",  
+                "Version" : "0.0.1"
+            },
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VpcId"
+                },
+                "Tags": [{
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": ["-", [
+                                    {
+                                        "Ref": "Name"
+                                    },
+                                    "routetable",
+                                    {
+                                        "Ref": "LayerName"
+                                    },
+                                    {
+                                        "Ref": "EnvironmentName"
+                                    },
+                                    {
+                                        "Ref": "ProjectName"
+                                    }]]
+                        }
+                    }]
+            }
+        },        
+        "ManagementPeeringRoute": {
+            "Type": "AWS::EC2::Route",
+            "Properties": {
+                "DestinationCidrBlock": {
+                    "Ref": "ManagementVPCPeeringConnectionCidrBlock"
+                },
+                "RouteTableId": {
+                    "Ref": "RouteTable"
+                },
+                "VpcPeeringConnectionId": {
+                    "Ref": "ManagementVPCPeeringConnectionId"
+                }
+            }
+        },        
+        "AuthenticationPeeringRoute": {
+            "Type": "AWS::EC2::Route",
+            "Condition": "NeedsAuthVpcPeering",
+            "Properties": {
+                "DestinationCidrBlock": {
+                    "Ref": "AuthenticationVPCPeeringConnectionCidrBlock"
+                },
+                "RouteTableId": {
+                    "Ref": "RouteTable"
+                },
+                "VpcPeeringConnectionId": {
+                    "Ref": "AuthenticationVPCPeeringConnectionId"
+                }
+            }
+        },
+        "SubnetRouteTableAssociation": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "Subnet"
+                },
+                "RouteTableId": {
+                    "Ref": "RouteTable"
+                }
+            }
+        },
+        "SubnetNatGatewayRoute": {
+            "Type": "AWS::EC2::Route",
+            "Condition": "NeedsNatGatewayRoute",
+            "DependsOn": ["RouteTable"],
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "RouteTable"
+                },
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "NatGatewayId": {
+                    "Ref": "NatGatewayId"
+                }
+            }
+        }
+    },
+    "Outputs": {
+        "SubnetId": {
+            "Description": "The ID of the Subnet",
+            "Value": {
+                "Ref": "Subnet"
+            }
+        },
+        "RouteTableId": {
+            "Description": "The ID the RouteTable",
+            "Value": {
+                "Ref": "RouteTable"
+            }
+        }
+    }
+}

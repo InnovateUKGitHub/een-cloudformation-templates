@@ -1,0 +1,363 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "VPC with a nested stack for each layer. Route53, EC2, ELB, RDS, S3, Elasticache",
+    "Parameters": {
+        "vpcCidrBlock": {
+            "Type": "String",
+            "Description": "The vpcCidrBlock e.g. 10.10.0.0/16",
+            "Default": "10.10.0.0/16"
+        },
+        "vpcCidrPrefix": {
+            "Type": "String",
+            "Description": "The network part of the vpcCidrBlock. e.g. 10.10.",
+            "Default": "10.10."
+        },
+        "ManagementVPCId": {
+            "Type": "String",
+            "Description": "The management VPC ID",
+            "Default": "vpc-09623d6c"
+        },
+        "PublicHostedZoneID": {
+            "Type": "String",
+            "Description": "The Route53 public hosted zone id",
+            "Default": "Z1QPR82ZQ4HWL9"
+        },
+        "PublicHostedZoneDomainName": {
+            "Type": "String",
+            "Description": "The Route53 public hosted zone domain name e.g. een.co.uk",
+            "Default": "een.co.uk"
+        },
+        "PublicHostedZoneSubDomainName": {
+            "Type": "String",
+            "Description": "The subdomain name to be used for the public layer1 cname e.g. www (creates www.een.co.uk)",
+            "Default": "www"
+        },
+        "ProjectName": {
+            "Type": "String",
+            "Description": "The project name to be used",
+            "Default": "een"
+        },
+        "EnvironmentName": {
+            "Type": "String",
+            "Description": "The environment name to be used",
+            "Default": "production"
+        },
+        "ApplicationEnv": {
+            "Type": "String",
+            "Description": "The APPLICATION_ENV to be used",
+            "Default": "production_een_aws"
+        },
+        "EC2KeyName": {
+            "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instances",
+            "Type": "AWS::EC2::KeyPair::KeyName",
+            "ConstraintDescription": "must be the name of an existing EC2 KeyPair.",
+            "Default": "ben.poole@bmbp"
+        },
+        "PublicSSLCertificateId": {
+            "Type": "String",
+            "Description": "The ARN of the ACM SSL certificate generated for layer 1 (public)"
+        },
+        "SSLServerCertificateName": {
+            "Type": "String",
+            "Description": "TODO - Will be replaced by PrivateSSLCertificateId.",
+            "Default": "wildcard.een.co.uk"
+        },
+        "NotificationEMail": {
+            "Description": "EMail address to notify if there are any scaling operations",
+            "Default": "een@aerian.com",
+            "Type": "String",
+            "AllowedPattern": "([a-zA-Z0-9_\\-\\.]+)@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.)|(([a-zA-Z0-9\\-]+\\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\\]?)",
+            "ConstraintDescription": "must be a valid email address."
+        },
+        "WhitelistEnabled": {
+            "Type" : "String",
+            "Default" : "true",
+            "AllowedValues" : ["true", "false"],
+            "Description" : "Should the IP Whitelist be applied? (firewall rules locking down HTTPS access to office IPs)"
+        }
+    },
+    "Conditions": { 
+    },
+    "Mappings": {
+    },
+    "Resources": {
+        "1presentation": {
+            "Type": "AWS::CloudFormation::Stack",
+            "DependsOn" : ["VPC1", "EC2SecurityGroupManagementVpc"],
+            "Properties": {
+                "TemplateURL": "https://s3-eu-west-1.amazonaws.com/cloudformations-een-shared/een-v1/develop/application/layers/1presentation.json",
+                "TimeoutInMinutes": "60",
+                "Parameters": {
+                    "VpcId": {
+                        "Ref": "VPC1"
+                    },
+                    "vpcCidrPrefix": {
+                        "Ref": "vpcCidrPrefix"
+                    },
+                    "PublicHostedZoneID": {
+                        "Ref": "PublicHostedZoneID"
+                    },
+                    "PublicHostedZoneDomainName": {
+                        "Ref": "PublicHostedZoneDomainName"
+                    },
+                    "PublicHostedZoneSubDomainName": {
+                        "Ref": "PublicHostedZoneSubDomainName"
+                    },
+                    "InternetGatewayId": {
+                        "Ref": "InternetGateway"
+                    },
+                    "ProjectName": {
+                        "Ref": "ProjectName"
+                    },
+                    "EnvironmentName": {
+                        "Ref": "EnvironmentName"
+                    },
+                    "ApplicationEnv": {
+                        "Ref": "ApplicationEnv"
+                    },
+                    "EC2KeyName": {
+                        "Ref": "EC2KeyName"
+                    },
+                    "PublicSSLCertificateId": {
+                        "Ref": "PublicSSLCertificateId"
+                    },
+                    "NotificationEMail": {
+                        "Ref": "NotificationEMail"
+                    },
+                    "Subnet1EC2AutoScaleNotificationTopicArn": {
+                        "Ref": "AutoScaleNotificationTopic"
+                    },
+                    "S3BucketLoggingName": {
+                        "Ref": "S3BucketLogging"
+                    },
+                    "WhitelistEnabled": { 
+                        "Ref" : "WhitelistEnabled" 
+                    },
+                    "EC2SecurityGroupManagementVpcId": {
+                        "Ref": "EC2SecurityGroupManagementVpc"
+                    }
+                }
+            }
+        },
+        "VPC1": {
+            "Type": "AWS::EC2::VPC",
+            "Properties": {
+                "CidrBlock": {
+                    "Ref": "vpcCidrBlock"
+                },
+                "EnableDnsSupport": "true",
+                "EnableDnsHostnames": "true",
+                "InstanceTenancy": "default",
+                "Tags": [{
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": ["-", ["vpc1", {
+                                        "Ref": "ProjectName"
+                                    }, {
+                                        "Ref": "EnvironmentName"
+                                    }]]
+                        }
+                    }]
+            }
+        },
+        "InternetGateway": {
+            "Type": "AWS::EC2::InternetGateway",
+            "Properties": {
+                "Tags": [{
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": ["-", [
+                                    "internetgateway", 
+                                    {
+                                        "Ref": "EnvironmentName"
+                                    },
+                                    {
+                                        "Ref": "ProjectName"
+                                    }]]
+                        }
+                    }]
+            }
+        },
+        "InternetVPCGatewayAttachment": {
+            "Type": "AWS::EC2::VPCGatewayAttachment",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC1"
+                },
+                "InternetGatewayId": {
+                    "Ref": "InternetGateway"
+                }
+            }
+        },
+        "S3BucketLogging": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+                "AccessControl": "LogDeliveryWrite",
+                "BucketName": {
+                    "Fn::Join": ["-", [
+                            "logging",
+                            {
+                                "Ref": "EnvironmentName"
+                            },
+                            {
+                                "Ref": "ProjectName"
+                            }]]
+                }
+            },
+            "DeletionPolicy": "Retain"
+        },
+        "BucketPolicyS3BucketLogging": {
+            "Type": "AWS::S3::BucketPolicy",
+            "Properties": {
+                "Bucket": {
+                    "Ref": "S3BucketLogging"
+                },
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Sid": "Stmt1429136633762",
+                            "Action": [
+                                "s3:PutObject"
+                            ],
+                            "Effect": "Allow",
+                            "Resource": {
+                                "Fn::Join": ["", ["arn:aws:s3:::", {
+                                            "Ref": "S3BucketLogging"
+                                        }, "/*"]]
+                            },
+                            "Principal": {
+                                "AWS": [
+                                    "156460612806"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        "AutoScaleNotificationTopic": {
+            "Type": "AWS::SNS::Topic",
+            "Properties": {
+                "Subscription": [{
+                        "Endpoint": {
+                            "Ref": "NotificationEMail"
+                        },
+                        "Protocol": "email"
+                    }]
+            }
+        },
+        "IAMUserSESFullAccess": {
+            "Type": "AWS::IAM::User",
+            "Properties": {
+                "Path": "/",
+                "Policies": [
+                    {
+                        "PolicyName": "fullAccessToSES",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [{
+                                    "Action": ["ses:SendEmail", "ses:SendRawEmail"],
+                                    "Sid": "Stmt1370533724000",
+                                    "Resource": ["*"],
+                                    "Effect": "Allow"
+                                }]
+                        }
+                    }
+                ]
+            }
+        },
+        "AccessKeyForIAMUserSESFullAccess": {
+            "Type": "AWS::IAM::AccessKey",
+            "Properties": {
+                "UserName": {
+                    "Ref": "IAMUserSESFullAccess"
+                }
+            }
+        },
+        "IAMUserS3FullAccess": {
+            "Type": "AWS::IAM::User",
+            "Properties": {
+                "Path": "/",
+                "Policies": [
+                    {
+                        "PolicyName": "IAMUserS3FullAccess",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": "s3:*",
+                                    "Resource": "*"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "AccessKeyForIAMUserS3FullAccess": {
+            "Type": "AWS::IAM::AccessKey",
+            "Properties": {
+                "UserName": {
+                    "Ref": "IAMUserS3FullAccess"
+                }
+            }
+        },
+        "EC2SecurityGroupManagementVpc": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "ICMP and HTTPS access for management stack",
+                "SecurityGroupIngress": [
+                  {
+                    "IpProtocol": "icmp",
+                    "FromPort": "-1",
+                    "ToPort": "-1",
+                    "CidrIp": "20.20.0.0/16"
+                  },
+                  {
+                    "IpProtocol": "tcp",
+                    "FromPort": "443",
+                    "ToPort": "443",
+                    "CidrIp": "20.20.0.0/16"
+                  },
+                  {
+                    "IpProtocol": "tcp",
+                    "FromPort": "22",
+                    "ToPort": "22",
+                    "CidrIp": "20.20.0.0/16"
+                  }
+                ],
+                "VpcId": {
+                  "Ref": "VPC1"
+                }
+            }
+        }
+    },
+    "Outputs": {
+        "AccessKeyForAccessKeyForIAMUserSESFullAccess": {
+            "Value": {
+                "Ref": "AccessKeyForIAMUserSESFullAccess"
+            }
+        },
+        "SecretKeyForAccessKeyForIAMUserSESFullAccess": {
+            "Value": {
+                "Fn::GetAtt": ["AccessKeyForIAMUserSESFullAccess", "SecretAccessKey"]
+            }
+        },
+        "AccessKeyForAccessKeyForIAMUserS3FullAccess": {
+            "Value": {
+                "Ref": "AccessKeyForIAMUserS3FullAccess"
+            }
+        },
+        "SecretKeyForAccessKeyForIAMUserS3FullAccess": {
+            "Value": {
+                "Fn::GetAtt": ["AccessKeyForIAMUserS3FullAccess", "SecretAccessKey"]
+            }
+        },
+        "Layer1StackRef": {
+            "Value": {
+                "Ref": "layer1"
+            }
+        }
+    }
+}

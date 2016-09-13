@@ -1,0 +1,106 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Elasticache and deps",
+    "Parameters": {
+        "ProjectName": {
+            "Type": "String",
+            "Description": "The project name to be used",
+            "Default": "een"
+        },
+        "EnvironmentName": {
+            "Type": "String",
+            "Description": "The environment name to be used",
+            "Default": "production"
+        },
+        "ApplicationEnv": {
+            "Type": "String",
+            "Description": "The APPLICATION_ENV to be used",
+            "Default": "production_een_aws"
+        },
+        "LayerName": {
+            "Type": "String",
+            "Description": "The name of the layer e.g. layer1",
+            "Default": "layer1"
+        },
+        "SubnetCidrBlock": {
+            "Type": "String",
+            "Description": "The SubnetCidrBlock"
+        },
+        "VpcId": {
+            "Type": "String",
+            "Description": "The ID of the VPC"
+        },
+        "SubnetId": {
+            "Type": "String",
+            "Description": "The ID of the Subnet"
+        }
+    },
+    "Mappings": {
+    },
+    "Conditions": {
+    },
+    "Resources": {
+        "ElasticacheSubnetGroup": {
+            "Type": "AWS::ElastiCache::SubnetGroup",
+            "Properties": {
+                "Description": {
+                    "Fn::Join": ["-", [
+                            "elasticache-subnetgroup", 
+                            {
+                                "Ref": "LayerName"
+                            },
+                            {
+                                "Ref": "EnvironmentName"
+                            },
+                            {
+                                "Ref": "ProjectName"
+                            }]]
+                },
+                "SubnetIds": [
+                    {
+                        "Ref": "SubnetId"
+                    }
+                ]
+            }
+        },
+        "ElasticacheSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Elasticache Security Group",
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "11211",
+                        "ToPort": "11211",
+                        "CidrIp": {
+                            "Ref": "SubnetCidrBlock"
+                        }
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "VpcId"
+                }
+            }
+        },
+        "ElasticacheCluster": {
+            "Type": "AWS::ElastiCache::CacheCluster",
+            "Properties": {
+                "AutoMinorVersionUpgrade": "true",
+                "Engine": "memcached",
+                "CacheNodeType": "cache.t1.micro",
+                "NumCacheNodes": "1",
+                "VpcSecurityGroupIds": [
+                    {
+                        "Ref": "ElasticacheSecurityGroup"
+                    }
+                ],
+                "CacheSubnetGroupName": {
+                    "Ref": "ElasticacheSubnetGroup"
+                }
+            }
+        }
+    },
+    "Outputs": {
+        
+    }
+}

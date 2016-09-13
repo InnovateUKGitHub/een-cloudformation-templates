@@ -1,0 +1,39 @@
+
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Elastic IP and x Nat gateway",
+    "Parameters": {
+        "SubnetId": {
+            "Type": "String",
+            "Description": "The ID of the Subnet"
+        }
+    },
+    "Mappings": {
+    },
+    "Conditions": {
+    },
+    "Resources": {
+      "NatGatewayEIP" : {
+        "Type" : "AWS::EC2::EIP",
+        "Properties" : {
+          "Domain" : "vpc"
+        }
+      },
+      "NatGateway" : {
+        "Type" : "AWS::EC2::NatGateway",
+        "DependsOn" : "NatGatewayEIP",
+        "Properties" : {
+          "AllocationId" : { "Fn::GetAtt" : ["NatGatewayEIP", "AllocationId"]},
+          "SubnetId" : { "Ref" : "SubnetId"}
+        }
+      }
+    },
+    "Outputs": {
+        "NatGatewayId": {
+            "Description": "The ID of the NatGateway",
+            "Value": {
+                "Ref": "NatGateway"
+            }
+        }
+    }
+}

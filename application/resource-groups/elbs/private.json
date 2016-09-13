@@ -1,0 +1,456 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "ELB, EC2, AutoScale, & Security Groups.",
+    "Parameters": {
+        "ProjectName": {
+            "Type": "String",
+            "Description": "The project name to be used",
+            "Default": "een"
+        },
+        "EnvironmentName": {
+            "Type": "String",
+            "Description": "The environment name to be used",
+            "Default": "production"
+        },
+        "ApplicationEnv": {
+            "Type": "String",
+            "Description": "The APPLICATION_ENV to be used",
+            "Default": "production_een_aws"
+        },
+        "EC2KeyName": {
+            "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instances",
+            "Type": "AWS::EC2::KeyPair::KeyName",
+            "ConstraintDescription": "must be the name of an existing EC2 KeyPair.",
+            "Default": "ben.poole@bmbp"
+        },
+        "NotificationEMail": {
+            "Description": "EMail address to notify if there are any scaling operations",
+            "Default": "een@aerian.com",
+            "Type": "String",
+            "AllowedPattern": "([a-zA-Z0-9_\\-\\.]+)@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.)|(([a-zA-Z0-9\\-]+\\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\\]?)",
+            "ConstraintDescription": "must be a valid email address."
+        },
+        "EC2InstanceType": {
+            "Description": "Type of EC2 instance to launch",
+            "Type": "String",
+            "Default": "m1.small"
+        },
+        "EC2AutoScaleGroupSizeMin": {
+            "Default": "1",
+            "Description": "The minimum size the EC2 AutoScale group will scale down to.",
+            "Type": "Number",
+            "MinValue": "1",
+            "MaxValue": "5",
+            "ConstraintDescription": "must be between 1 and 5."
+        },
+        "EC2AutoScaleGroupSizeMax": {
+            "Default": "1",
+            "Description": "The maximum size the EC2 AutoScale group can scale up to.",
+            "Type": "Number",
+            "MinValue": "1",
+            "MaxValue": "20",
+            "ConstraintDescription": "must be between 1 and 20."
+        },
+        "EC2InstanceAmi": {
+            "Description": "Type of AMI to use for Layer 1 EC2 instances",
+            "Type": "String",
+            "Default": "ami-ed07a69e"
+        },
+        "EC2AutoScaleNotificationTopicArn": {
+            "Description": "EC2AutoScaleNotificationTopicArn",
+            "Type": "String",
+            "Default": "arn:aws:sns:eu-west-1:853139206567:een-integration-stack-resources-AutoScaleNotificationTopic-N87RNMP39SRY"
+        },
+        "EC2InstancePort": {
+            "Description": "The target port on the EC2 instance (Strongloop PM) e.g. 3300",
+            "Type": "String",
+            "Default": "3300"
+        },
+        "EC2UserData": {
+            "Description": "UserData for the EC2 instance",
+            "Type": "String",
+            "Default": "#!/bin/bash"
+        },
+        "LayerName": {
+            "Type": "String",
+            "Description": "The name of the layer e.g. layer1",
+            "Default": "layer1"
+        },
+        "SubnetCidrBlock": {
+            "Type": "String",
+            "Description": "The local subnet CidrBlock",
+            "Default": "10.10.1.0/24"
+        },
+        "VpcId": {
+            "Type": "String",
+            "Description": "The ID of the VPC",
+            "Default": "vpc-30297455"
+        },
+        "SubnetAId": {
+            "Type": "String",
+            "Description": "The ID of SubnetA",
+            "Default": "subnet-71212514"
+        },
+        "SubnetBId": {
+            "Type": "String",
+            "Description": "The ID of SubnetB",
+            "Default": "subnet-71212514"
+        },
+        "SubnetName": {
+            "Type": "String",
+            "Description": "The name of the Subnet",
+            "Default": "subnet1"
+        },
+        "S3BucketLoggingName": {
+            "Type": "String",
+            "Description": "The name of the logging S3 bucket",
+            "Default": "logging-production-een"
+        },
+        "EC2SecurityGroupIds": {
+          "Description": "Security groups that can be used to access the EC2s",
+          "Type": "CommaDelimitedList",
+          "ConstraintDescription": "Must be list of EC2 security group ids"
+        },
+        "ELBSecurityGroupIds": {
+          "Description": "Security groups that can be used to access the ELBs",
+          "Type": "CommaDelimitedList",
+          "ConstraintDescription": "Must be list of EC2 security group ids"
+        }
+    },
+    "Mappings": {
+    },
+    "Conditions": {
+        
+    },
+    "Resources": {
+        "ElasticLoadBalancer": {
+            "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+            "Properties": {
+                "Scheme" : "internal",
+                "Subnets": [
+                    {
+                        "Ref": "SubnetAId"
+                    },
+                    {
+                        "Ref": "SubnetBId"
+                    }
+                ],
+                "SecurityGroups": { "Ref": "ELBSecurityGroupIds" },
+                "Listeners": [
+                    {
+                        "LoadBalancerPort": "443",
+                        "InstancePort": {
+                            "Ref": "EC2InstancePort"
+                        },
+                        "Protocol": "HTTPS",
+                        "InstanceProtocol": "HTTP",
+                        "SSLCertificateId": {
+                            "Fn::Join": ["/", [ 
+                                "arn:aws:iam::853139206567:server-certificate",
+                                {
+                                    "Ref": "EnvironmentName"
+                                },
+                                {
+                                    "Fn::Join": [".", [
+                                        "ECDSA-elb",
+                                        "subnet1",
+                                        {
+                                            "Ref": "LayerName"
+                                        },
+                                        {
+                                            "Ref": "EnvironmentName"
+                                        },
+                                        {
+                                            "Ref": "ProjectName"
+                                        },
+                                        "gov.uk"
+                                    ]]
+                                }
+                            ]]
+                        }
+                    }
+                    
+                ],
+                "HealthCheck": {
+                    "Target": {
+                        "Fn::Join": [":", [
+                                "TCP",
+                                {
+                                    "Ref": "EC2InstancePort"
+                                }]]
+                    },
+                    "HealthyThreshold": "3",
+                    "UnhealthyThreshold": "5",
+                    "Interval": "30",
+                    "Timeout": "5"
+                },
+                "AccessLoggingPolicy": {
+                    "S3BucketName": {
+                        "Ref": "S3BucketLoggingName"
+                    },
+                    "S3BucketPrefix": "layer1/access-logs/elb",
+                    "Enabled": "true",
+                    "EmitInterval": "60"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": ["-", [
+                                    {
+                                        "Ref": "SubnetName"
+                                    },
+                                    {
+                                        "Ref": "LayerName"
+                                    },
+                                    {
+                                        "Ref": "EnvironmentName"
+                                    },
+                                    {
+                                        "Ref": "ProjectName"
+                                    }]]
+                        }
+                    }
+                ]
+            }
+        },
+        "EC2AutoScaleGroup": {
+            "Type": "AWS::AutoScaling::AutoScalingGroup",
+            "Properties": {
+                "VPCZoneIdentifier": [
+                    {
+                        "Ref": "SubnetAId"
+                    },
+                    {
+                        "Ref": "SubnetBId"
+                    }
+                ],
+                "LaunchConfigurationName": {
+                    "Ref": "EC2AutoScaleLaunchConfig"
+                },
+                "MinSize": {
+                    "Ref": "EC2AutoScaleGroupSizeMin"
+                },
+                "MaxSize": {
+                    "Ref": "EC2AutoScaleGroupSizeMax"
+                },
+                "LoadBalancerNames": [{
+                        "Ref": "ElasticLoadBalancer"
+                    }],
+                "NotificationConfiguration": {
+                    "TopicARN": {
+                        "Ref": "EC2AutoScaleNotificationTopicArn"
+                    },
+                    "NotificationTypes": ["autoscaling:EC2_INSTANCE_LAUNCH",
+                        "autoscaling:EC2_INSTANCE_LAUNCH_ERROR",
+                        "autoscaling:EC2_INSTANCE_TERMINATE",
+                        "autoscaling:EC2_INSTANCE_TERMINATE_ERROR"]
+                },
+                "Tags": [
+                    {
+                        "Key": "application_env",
+                        "Value": {
+                            "Ref": "ApplicationEnv"
+                        },
+                        "PropagateAtLaunch": true
+                    },
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": ["-", [
+                                    {
+                                        "Ref": "SubnetName"
+                                    },
+                                    {
+                                        "Ref": "LayerName"
+                                    },
+                                    {
+                                        "Ref": "EnvironmentName"
+                                    },
+                                    {
+                                        "Ref": "ProjectName"
+                                    }]]
+                        },
+                        "PropagateAtLaunch": true
+                    }
+                ]
+            }
+        },
+        "EC2AutoScaleLaunchConfig": {
+            "Type": "AWS::AutoScaling::LaunchConfiguration",
+            "Metadata": {
+                "Comment": "Provision ubuntu and install web app from git",
+                "AWS::CloudFormation::Init": {
+                    "config": {
+                        "files": {
+                            "/etc/environment-buildtemp": {
+                                "content": {
+                                    "Fn::Join": ["\n", [
+                                            "PATH='/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games'\n",
+                                            "APPLICATION_ENV=",
+                                            {
+                                                "Ref": "ApplicationEnv"
+                                            }, "\n",
+                                            "HOSTNAME=ip-172-31-9-111"
+                                        ]]
+                                },
+                                "mode": "000644",
+                                "owner": "root",
+                                "group": "root"
+                            },
+                            "/etc/cfn/cfn-hup.conf": {
+                                "content": {
+                                    "Fn::Join": ["", [
+                                            "[main]\n",
+                                            "stack=", {
+                                                "Ref": "AWS::StackId"
+                                            }, "\n",
+                                            "region=", {
+                                                "Ref": "AWS::Region"
+                                            }, "\n"
+                                        ]]
+                                },
+                                "mode": "000400",
+                                "owner": "root",
+                                "group": "root"
+                            },
+                            "/etc/cfn/hooks.d/cfn-auto-reloader.conf": {
+                                "content": {
+                                    "Fn::Join": ["", [
+                                            "[cfn-auto-reloader-hook]\n",
+                                            "triggers=post.update\n",
+                                            "path=Resources.LaunchConfig.Metadata.AWS::CloudFormation::Init\n",
+                                            "action=/opt/aws/bin/cfn-init -v ",
+                                            "         --stack ", {
+                                                "Ref": "AWS::StackName"
+                                            },
+                                            "         --resource LaunchConfig ",
+                                            "         --region ", {
+                                                "Ref": "AWS::Region"
+                                            }, "\n",
+                                            "runas=root\n"
+                                        ]]
+                                }
+                            }
+                        },
+                        "services": {
+                            "sysvinit": {
+                                "httpd": {
+                                    "enabled": "true",
+                                    "ensureRunning": "true"
+                                },
+                                "cfn-hup": {
+                                    "enabled": "true",
+                                    "ensureRunning": "true",
+                                    "files": ["/etc/cfn/cfn-hup.conf", "/etc/cfn/hooks.d/cfn-auto-reloader.conf"]
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "Properties": {
+                "SecurityGroups": { "Ref": "EC2SecurityGroupIds" },
+                "KeyName": {
+                    "Ref": "EC2KeyName"
+                },
+                "InstanceType": {
+                    "Ref": "EC2InstanceType"
+                },
+                "ImageId": {
+                    "Ref": "EC2InstanceAmi"
+                },
+                "UserData": {
+                    "Fn::Base64": {
+                        "Ref": "EC2UserData"
+                    }
+                },
+                "AssociatePublicIpAddress": "false"
+            }
+        },
+        "WebServerScaleUpPolicy": {
+            "Type": "AWS::AutoScaling::ScalingPolicy",
+            "Properties": {
+                "AdjustmentType": "ChangeInCapacity",
+                "AutoScalingGroupName": {
+                    "Ref": "EC2AutoScaleGroup"
+                },
+                "Cooldown": "60",
+                "ScalingAdjustment": "1"
+            }
+        },
+        "WebServerScaleDownPolicy": {
+            "Type": "AWS::AutoScaling::ScalingPolicy",
+            "Properties": {
+                "AdjustmentType": "ChangeInCapacity",
+                "AutoScalingGroupName": {
+                    "Ref": "EC2AutoScaleGroup"
+                },
+                "Cooldown": "60",
+                "ScalingAdjustment": "-1"
+            }
+        },
+        "CPUAlarmHigh": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "AlarmDescription": "Scale-up if CPU > 60% for 10 minutes",
+                "MetricName": "CPUUtilization",
+                "Namespace": "AWS/EC2",
+                "Statistic": "Average",
+                "Period": "300",
+                "EvaluationPeriods": "2",
+                "Threshold": "60",
+                "AlarmActions": [{
+                        "Ref": "WebServerScaleUpPolicy"
+                    }],
+                "Dimensions": [
+                    {
+                        "Name": "AutoScalingGroupName",
+                        "Value": {
+                            "Ref": "EC2AutoScaleGroup"
+                        }
+                    }
+                ],
+                "ComparisonOperator": "GreaterThanThreshold"
+            }
+        },
+        "CPUAlarmLow": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "AlarmDescription": "Scale-down if CPU < 60% for 10 minutes",
+                "MetricName": "CPUUtilization",
+                "Namespace": "AWS/EC2",
+                "Statistic": "Average",
+                "Period": "300",
+                "EvaluationPeriods": "2",
+                "Threshold": "60",
+                "AlarmActions": [{
+                        "Ref": "WebServerScaleDownPolicy"
+                    }],
+                "Dimensions": [
+                    {
+                        "Name": "AutoScalingGroupName",
+                        "Value": {
+                            "Ref": "EC2AutoScaleGroup"
+                        }
+                    }
+                ],
+                "ComparisonOperator": "LessThanThreshold"
+            }
+        }
+    },
+    "Outputs": {
+        "HostedZoneId": {
+            "Description": "The HostedZoneId of ElasticLoadBalancer",
+            "Value": {
+                "Fn::GetAtt": ["ElasticLoadBalancer", "CanonicalHostedZoneNameID"]
+            }
+        },
+        "DNSName": {
+            "Description": "The DNSName of ElasticLoadBalancer",
+            "Value": {
+                "Fn::GetAtt": ["ElasticLoadBalancer", "DNSName"]
+            }
+        }
+    }
+}

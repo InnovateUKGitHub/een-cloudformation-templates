@@ -1,0 +1,186 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Subnet, Route Table, Management VPCPeering Route & Internet Gateway Route",
+    "Parameters": {
+        "ProjectName": {
+            "Type": "String",
+            "Description": "The project name to be used",
+            "Default": "een"
+        },
+        "EnvironmentName": {
+            "Type": "String",
+            "Description": "The environment name to be used",
+            "Default": "production"
+        },
+        "ApplicationEnv": {
+            "Type": "String",
+            "Description": "The APPLICATION_ENV to be used",
+            "Default": "production_een_aws"
+        },
+        "CidrBlock": {
+            "Type": "String",
+            "Description": "The subnet CidrBlock",
+            "Default": "10.10.1.0/26"
+        },
+        "LayerName": {
+            "Type": "String",
+            "Description": "The name of the layer e.g. layer1",
+            "Default": "layer1"
+        },
+        "VpcId": {
+            "Type": "String",
+            "Description": "The ID of the VPC",
+            "Default": "vpc-30297455"
+        },
+        "InternetGatewayId": {
+            "Type": "String",
+            "Description": "The ID of the Internet Gateway. Triggers Internet Gateway Route creation.",
+            "Default": "false"
+        },
+        "AvailabilityZone": {
+            "Type": "String",
+            "Description": "The availability zone the subnet should be placed in.",
+            "Default": "eu-west-1a"
+        },
+        "Name": {
+            "Type": "String",
+            "Description": "The project name to be used",
+            "Default": "subnet1"
+        },
+        "ManagementVPCPeeringConnectionId": {
+            "Type": "String",
+            "Description": "The id of the ManagementVPCPeeringConnection",
+            "Default": "pcx-96ff2bff"
+        },
+        "ManagementVPCPeeringConnectionCidrBlock": {
+            "Type": "String",
+            "Description": "The Cidr block of the ManagementVPCPeeringConnection",
+            "Default": "20.20.0.0/16"
+        }
+    },
+    "Mappings": {
+    },
+    "Conditions": {
+    },
+    "Resources": {
+        "Subnet": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VpcId"
+                },
+                "CidrBlock": {
+                    "Ref": "CidrBlock"
+                },
+                "AvailabilityZone": {
+                    "Ref": "AvailabilityZone"
+                },
+                "Tags": [{
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": ["-", [
+                                    {
+                                        "Ref": "Name"
+                                    },
+                                    {
+                                        "Ref": "LayerName"
+                                    },
+                                    {
+                                        "Ref": "EnvironmentName"
+                                    },
+                                    {
+                                        "Ref": "ProjectName"
+                                    }]]
+                        }
+                    }],
+                "MapPublicIpOnLaunch": "true"
+            }
+        },
+        "RouteTable": {
+            "Type": "AWS::EC2::RouteTable",
+            "Metadata": {
+                "Comment": "Route table for subnet.",
+                "Version": "0.0.1"
+            },
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VpcId"
+                },
+                "Tags": [{
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": ["-", [
+                                    {
+                                        "Ref": "Name"
+                                    },
+                                    "routetable",
+                                    {
+                                        "Ref": "LayerName"
+                                    },
+                                    {
+                                        "Ref": "EnvironmentName"
+                                    },
+                                    {
+                                        "Ref": "ProjectName"
+                                    }]]
+                        }
+                    }]
+            }
+        },
+        "InternetGatewayRoute": {
+            "Type": "AWS::EC2::Route",
+            "Metadata": {
+                "Comment": "InternetGateway Route for subnet.",
+                "Version": "0.0.1"
+            },
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "RouteTable"
+                },
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "GatewayId": {
+                    "Ref": "InternetGatewayId"
+                }
+            }
+        },
+        "ManagementPeeringRoute": {
+            "Type": "AWS::EC2::Route",
+            "Properties": {
+                "DestinationCidrBlock": {
+                    "Ref": "ManagementVPCPeeringConnectionCidrBlock"
+                },
+                "RouteTableId": {
+                    "Ref": "RouteTable"
+                },
+                "VpcPeeringConnectionId": {
+                    "Ref": "ManagementVPCPeeringConnectionId"
+                }
+            }
+        },
+        "SubnetRouteTableAssociation": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "Subnet"
+                },
+                "RouteTableId": {
+                    "Ref": "RouteTable"
+                }
+            }
+        }
+    },
+    "Outputs": {
+        "SubnetId": {
+            "Description": "The ID of the Subnet",
+            "Value": {
+                "Ref": "Subnet"
+            }
+        },
+        "RouteTableId": {
+            "Description": "The ID of the RouteTable",
+            "Value": {
+                "Ref": "RouteTable"
+            }
+        }
+    }
+}

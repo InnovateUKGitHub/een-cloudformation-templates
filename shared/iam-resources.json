@@ -1,0 +1,103 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "IAM Groups and Users for all stacks (Developers, Deployment servers, finance, etc)",
+    "Parameters": {
+    },
+    "Mappings": {
+    },
+    "Resources": {
+        "CrossAccountRoleAerian": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "AWS": "arn:aws:iam::048516003832:root"
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+        "CrossAccountPolicyAerian": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "IAMInstancePolicy",
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "*"
+                            ],
+                            "Resource": [
+                                "*"
+                            ]
+                        }
+                    ]
+                },
+                "Roles": [
+                    {
+                        "Ref": "CrossAccountRoleAerian"
+                    }
+                ]
+            }
+        },
+        "IAMGroupAdministrators": {
+            "Type": "AWS::IAM::Group",
+            "Properties": {
+                "Path": "/",
+                "Policies": [{
+                        "PolicyName": "AdministratorAccessPolicy",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": "*",
+                                    "Resource": "*"
+                                }
+                            ]
+                        }
+                    }]
+            }
+        },
+        "IAMUserJenkins": {
+            "Type": "AWS::IAM::User",
+            "DependsOn": "IAMGroupAdministrators",
+            "Properties": {
+                "Path": "/",
+                "Groups": [
+                    {
+                        "Ref": "IAMGroupAdministrators"
+                    }
+                ]
+            }
+        },
+        "AccessKeyForIAMUserJenkins": {
+            "Type": "AWS::IAM::AccessKey",
+            "Properties": {
+                "UserName": {
+                    "Ref": "IAMUserJenkins"
+                }
+            }
+        }
+    },
+    "Outputs": {
+        "AccessKeyForAccessKeyForIAMUserJenkins": {
+            "Value": {
+                "Ref": "AccessKeyForIAMUserJenkins"
+            }
+        },
+        "SecretKeyForAccessKeyForIAMUserJenkins": {
+            "Value": {
+                "Fn::GetAtt": ["AccessKeyForIAMUserJenkins", "SecretAccessKey"]
+            }
+        }
+    }
+}
