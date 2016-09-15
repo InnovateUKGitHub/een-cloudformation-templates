@@ -234,6 +234,9 @@
                 "MaxSize": {
                     "Ref": "EC2AutoScaleGroupSizeMax"
                 },
+                "TerminationPolicies": [
+                    "NewestInstance"
+                ],
                 "LoadBalancerNames": [{
                         "Ref": "ElasticLoadBalancer"
                     }],

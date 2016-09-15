@@ -244,6 +244,9 @@
                 "MaxSize": {
                     "Ref": "EC2AutoScaleGroupSizeMax"
                 },
+                "TerminationPolicies": [
+                    "NewestInstance"
+                ],
                 "TargetGroupARNs": [{
                         "Ref": "ElbTargetGroup1"
                     }],
