@@ -53,10 +53,6 @@
             "ConstraintDescription": "must be the name of an existing EC2 KeyPair.",
             "Default": "ben.poole@bmbp"
         },
-        "PublicSSLCertificateId": {
-            "Type": "String",
-            "Description": "The ARN of the ACM SSL certificate generated for layer 1 (public)"
-        },
         "SSLServerCertificateName": {
             "Type": "String",
             "Description": "TODO - Will be replaced by PrivateSSLCertificateId.",
@@ -83,7 +79,7 @@
     "Resources": {
         "1presentation": {
             "Type": "AWS::CloudFormation::Stack",
-            "DependsOn" : ["VPC1", "EC2SecurityGroupManagementVpc"],
+            "DependsOn" : ["VPC1", "EC2SecurityGroupManagementVpc", "acmCertificate1"],
             "Properties": {
                 "TemplateURL": "https://s3-eu-west-1.amazonaws.com/cloudformations-een-shared/een-v1/develop/application/layers/1presentation.json",
                 "TimeoutInMinutes": "60",
@@ -119,7 +115,7 @@
                         "Ref": "EC2KeyName"
                     },
                     "PublicSSLCertificateId": {
-                        "Ref": "PublicSSLCertificateId"
+                        "Ref": "acmCertificate1"
                     },
                     "NotificationEMail": {
                         "Ref": "NotificationEMail"
@@ -137,6 +133,40 @@
                         "Ref": "EC2SecurityGroupManagementVpc"
                     }
                 }
+            }
+        },
+        "acmCertificate1": {
+            "Type": "AWS::CertificateManager::Certificate",
+            "Properties": {
+                "DomainName": {
+                    "Fn::Join": [".", [
+                        {
+                            "Ref": "PublicHostedZoneSubDomainName"
+                        },
+                        {
+                            "Ref": "PublicHostedZoneDomainName"
+                        }]
+                    ]
+                },
+                "DomainValidationOptions": [{
+                    "DomainName": {
+                        "Fn::Join": [".", [
+                            {
+                                "Ref": "PublicHostedZoneSubDomainName"
+                            },
+                            {
+                                "Ref": "PublicHostedZoneDomainName"
+                            }]
+                        ]
+                    },
+                    "ValidationDomain": {
+                        "Fn::Join": [".", [
+                            {
+                                "Ref": "PublicHostedZoneDomainName"
+                            }]
+                        ]
+                    }
+                }]
             }
         },
         "VPC1": {

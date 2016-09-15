@@ -121,10 +121,10 @@
             "Default": "logging-production-een"
         },
         "WhitelistEnabled": {
-            "Type" : "String",
-            "Default" : "true",
-            "AllowedValues" : ["true", "false"],
-            "Description" : "Should the IP Whitelist be applied? (firewall rules locking down HTTPS access to office IPs)"
+            "Type": "String",
+            "Default": "true",
+            "AllowedValues": ["true", "false"],
+            "Description": "Should the IP Whitelist be applied? (firewall rules locking down HTTPS access to office IPs)"
         },
         "EC2SecurityGroupManagementVpcId": {
             "Type": "String",
@@ -132,76 +132,150 @@
         }
     },
     "Resources": {
-        "subnet1a" : {
-            "Type" : "AWS::CloudFormation::Stack",
+        "subnet1a": {
+            "Type": "AWS::CloudFormation::Stack",
             "Metadata": {
-                "Comment" : "Subnet, Route Table, Management VPCPeering Route & Internet Gateway Route in Availability Zone eu-west-1a.",  
-                "Version" : "0.0.1"
+                "Comment": "Subnet, Route Table, Management VPCPeering Route & Internet Gateway Route in Availability Zone eu-west-1a.",
+                "Version": "0.0.1"
             },
-            "Properties" : {
-                "TemplateURL" : "https://s3-eu-west-1.amazonaws.com/cloudformations-een-shared/een-v1/develop/application/resource-groups/subnets/public.json",
-                "TimeoutInMinutes" : "60",
+            "Properties": {
+                "TemplateURL": "https://s3-eu-west-1.amazonaws.com/cloudformations-een-shared/een-v1/develop/application/resource-groups/subnets/public.json",
+                "TimeoutInMinutes": "60",
                 "Parameters": {
-                    "ProjectName": { "Ref" : "ProjectName" },
-                    "EnvironmentName": { "Ref" : "EnvironmentName" },
-                    "ApplicationEnv": { "Ref" : "ApplicationEnv" },
-                    "VpcId": { "Ref" : "VpcId" },
-                    "InternetGatewayId": { "Ref" : "InternetGatewayId" },
-                    "LayerName": { "Ref" : "LayerName" },
-                    "CidrBlock": { "Fn::Join": ["",[ { "Ref": "vpcCidrPrefix" }, { "Ref" : "Subnet1aCidrBlock" } ]] },
+                    "ProjectName": {
+                        "Ref": "ProjectName"
+                    },
+                    "EnvironmentName": {
+                        "Ref": "EnvironmentName"
+                    },
+                    "ApplicationEnv": {
+                        "Ref": "ApplicationEnv"
+                    },
+                    "VpcId": {
+                        "Ref": "VpcId"
+                    },
+                    "InternetGatewayId": {
+                        "Ref": "InternetGatewayId"
+                    },
+                    "LayerName": {
+                        "Ref": "LayerName"
+                    },
+                    "CidrBlock": {
+                        "Fn::Join": ["", [{
+                                    "Ref": "vpcCidrPrefix"
+                                }, {
+                                    "Ref": "Subnet1aCidrBlock"
+                                }]]
+                    },
                     "AvailabilityZone": "eu-west-1a",
                     "Name": "subnet1a"
                 }
             }
         },
-        "subnet1b" : {
-            "Type" : "AWS::CloudFormation::Stack",
+        "subnet1b": {
+            "Type": "AWS::CloudFormation::Stack",
             "Metadata": {
-                "Comment" : "Subnet, Route Table, Management VPCPeering Route & Internet Gateway Route in Availability Zone eu-west-1b.",  
-                "Version" : "0.0.1"
+                "Comment": "Subnet, Route Table, Management VPCPeering Route & Internet Gateway Route in Availability Zone eu-west-1b.",
+                "Version": "0.0.1"
             },
-            "Properties" : {
-                "TemplateURL" : "https://s3-eu-west-1.amazonaws.com/cloudformations-een-shared/een-v1/develop/application/resource-groups/subnets/public.json",
-                "TimeoutInMinutes" : "60",
+            "Properties": {
+                "TemplateURL": "https://s3-eu-west-1.amazonaws.com/cloudformations-een-shared/een-v1/develop/application/resource-groups/subnets/public.json",
+                "TimeoutInMinutes": "60",
                 "Parameters": {
-                    "ProjectName": { "Ref" : "ProjectName" },
-                    "EnvironmentName": { "Ref" : "EnvironmentName" },
-                    "ApplicationEnv": { "Ref" : "ApplicationEnv" },
-                    "VpcId": { "Ref" : "VpcId" },
-                    "InternetGatewayId": { "Ref" : "InternetGatewayId" },
-                    "LayerName": { "Ref" : "LayerName" },
-                    "CidrBlock": { "Fn::Join": ["",[ { "Ref": "vpcCidrPrefix" }, { "Ref" : "Subnet1bCidrBlock" } ]] },
+                    "ProjectName": {
+                        "Ref": "ProjectName"
+                    },
+                    "EnvironmentName": {
+                        "Ref": "EnvironmentName"
+                    },
+                    "ApplicationEnv": {
+                        "Ref": "ApplicationEnv"
+                    },
+                    "VpcId": {
+                        "Ref": "VpcId"
+                    },
+                    "InternetGatewayId": {
+                        "Ref": "InternetGatewayId"
+                    },
+                    "LayerName": {
+                        "Ref": "LayerName"
+                    },
+                    "CidrBlock": {
+                        "Fn::Join": ["", [{
+                                    "Ref": "vpcCidrPrefix"
+                                }, {
+                                    "Ref": "Subnet1bCidrBlock"
+                                }]]
+                    },
                     "AvailabilityZone": "eu-west-1b",
                     "Name": "subnet1b"
                 }
             }
         },
-        "elb1" : {
-            "Type" : "AWS::CloudFormation::Stack",
-            "Properties" : {
-                "TemplateURL" : "https://s3-eu-west-1.amazonaws.com/cloudformations-een-shared/een-v1/develop/application/resource-groups/elbs/public.json",
-                "TimeoutInMinutes" : "60",
+        "elb1": {
+            "Type": "AWS::CloudFormation::Stack",
+            "Properties": {
+                "TemplateURL": "https://s3-eu-west-1.amazonaws.com/cloudformations-een-shared/een-v1/develop/application/resource-groups/elbs/public.json",
+                "TimeoutInMinutes": "60",
                 "Parameters": {
-                    "ProjectName": { "Ref" : "ProjectName" },
-                    "EnvironmentName": { "Ref" : "EnvironmentName" },
-                    "ApplicationEnv": { "Ref" : "ApplicationEnv" },
-                    "VpcId": { "Ref" : "VpcId" },
-                    "LayerName": { "Ref" : "LayerName" },
-                    "SubnetCidrBlock": { "Fn::Join": ["",[ { "Ref": "vpcCidrPrefix" }, { "Ref" : "Subnet1CidrBlock" } ]] },
-                    "SubnetAId" : { "Fn::GetAtt" : [ "subnet1a", "Outputs.SubnetId" ] },
-                    "SubnetBId" : { "Fn::GetAtt" : [ "subnet1b", "Outputs.SubnetId" ] },
+                    "ProjectName": {
+                        "Ref": "ProjectName"
+                    },
+                    "EnvironmentName": {
+                        "Ref": "EnvironmentName"
+                    },
+                    "ApplicationEnv": {
+                        "Ref": "ApplicationEnv"
+                    },
+                    "VpcId": {
+                        "Ref": "VpcId"
+                    },
+                    "LayerName": {
+                        "Ref": "LayerName"
+                    },
+                    "SubnetCidrBlock": {
+                        "Fn::Join": ["", [{
+                                    "Ref": "vpcCidrPrefix"
+                                }, {
+                                    "Ref": "Subnet1CidrBlock"
+                                }]]
+                    },
+                    "SubnetAId": {
+                        "Fn::GetAtt": ["subnet1a", "Outputs.SubnetId"]
+                    },
+                    "SubnetBId": {
+                        "Fn::GetAtt": ["subnet1b", "Outputs.SubnetId"]
+                    },
                     "SubnetName": "subnet1",
-                    "S3BucketLoggingName" : { "Ref" : "S3BucketLoggingName" },
-                    "EC2KeyName": { "Ref" : "EC2KeyName" },
-                    "EC2InstanceAmi": { "Ref" : "Subnet1EC2InstanceAmi" },
-                    "EC2InstanceType": { "Ref" : "Subnet1EC2InstanceType" },
-                    "EC2AutoScaleGroupSizeMin": { "Ref" : "Subnet1EC2AutoScaleGroupSizeMin" },
-                    "EC2AutoScaleGroupSizeMax": { "Ref" : "Subnet1EC2AutoScaleGroupSizeMax" },
-                    "EC2AutoScaleNotificationTopicArn": { "Ref" : "Subnet1EC2AutoScaleNotificationTopicArn" },
+                    "S3BucketLoggingName": {
+                        "Ref": "S3BucketLoggingName"
+                    },
+                    "EC2KeyName": {
+                        "Ref": "EC2KeyName"
+                    },
+                    "EC2InstanceAmi": {
+                        "Ref": "Subnet1EC2InstanceAmi"
+                    },
+                    "EC2InstanceType": {
+                        "Ref": "Subnet1EC2InstanceType"
+                    },
+                    "EC2AutoScaleGroupSizeMin": {
+                        "Ref": "Subnet1EC2AutoScaleGroupSizeMin"
+                    },
+                    "EC2AutoScaleGroupSizeMax": {
+                        "Ref": "Subnet1EC2AutoScaleGroupSizeMax"
+                    },
+                    "EC2AutoScaleNotificationTopicArn": {
+                        "Ref": "Subnet1EC2AutoScaleNotificationTopicArn"
+                    },
                     "EC2InstancePort": "80",
-                    "EC2SecurityGroupManagementVpcId": { "Ref": "EC2SecurityGroupManagementVpcId" },
-                    "PublicSSLCertificateId": { "Ref": "PublicSSLCertificateId" },
-                    "EC2UserData" : {
+                    "EC2SecurityGroupManagementVpcId": {
+                        "Ref": "EC2SecurityGroupManagementVpcId"
+                    },
+                    "PublicSSLCertificateId": {
+                        "Ref": "PublicSSLCertificateId"
+                    },
+                    "EC2UserData": {
                         "Fn::Join": [
                             "\n",
                             [
@@ -239,23 +313,31 @@
                 }
             }
         },
-        "elasticsearch1" : {
-            "Type" : "AWS::CloudFormation::Stack",
-            "Properties" : {
-                "TemplateURL" : "https://s3-eu-west-1.amazonaws.com/cloudformations-een-shared/een-v1/develop/application/resource-groups/elasticsearch.json",
-                "TimeoutInMinutes" : "60",
+        "elasticsearch1": {
+            "Type": "AWS::CloudFormation::Stack",
+            "Properties": {
+                "TemplateURL": "https://s3-eu-west-1.amazonaws.com/cloudformations-een-shared/een-v1/develop/application/resource-groups/elasticsearch.json",
+                "TimeoutInMinutes": "60",
                 "Parameters": {
-                    "ProjectName": { "Ref" : "ProjectName" },
-                    "EnvironmentName": { "Ref" : "EnvironmentName" },
-                    "ApplicationEnv": { "Ref" : "ApplicationEnv" },
-                    "LayerName": { "Ref" : "LayerName" },
+                    "ProjectName": {
+                        "Ref": "ProjectName"
+                    },
+                    "EnvironmentName": {
+                        "Ref": "EnvironmentName"
+                    },
+                    "ApplicationEnv": {
+                        "Ref": "ApplicationEnv"
+                    },
+                    "LayerName": {
+                        "Ref": "LayerName"
+                    },
                     "InstanceType": "t2.micro.elasticsearch"
                 }
             }
-        },      
+        },
         "RecordSetGroup1": {
             "Type": "AWS::Route53::RecordSetGroup",
-            "DependsOn" : "elb1",
+            "DependsOn": "elb1",
             "Properties": {
                 "HostedZoneId": {
                     "Ref": "PublicHostedZoneID"
@@ -273,10 +355,10 @@
                         "Type": "A",
                         "AliasTarget": {
                             "HostedZoneId": {
-                                "Fn::GetAtt" : [ "elb1", "Outputs.HostedZoneId" ]
+                                "Fn::GetAtt": ["elb1", "Outputs.HostedZoneId"]
                             },
                             "DNSName": {
-                                "Fn::GetAtt" : [ "elb1", "Outputs.DNSName" ]
+                                "Fn::GetAtt": ["elb1", "Outputs.DNSName"]
                             }
                         }
                     }
