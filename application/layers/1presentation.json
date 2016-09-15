@@ -239,6 +239,20 @@
                 }
             }
         },
+        "elasticsearch1" : {
+            "Type" : "AWS::CloudFormation::Stack",
+            "Properties" : {
+                "TemplateURL" : "https://s3-eu-west-1.amazonaws.com/cloudformations-een-shared/een-v1/develop/application/resource-groups/elasticsearch.json",
+                "TimeoutInMinutes" : "60",
+                "Parameters": {
+                    "ProjectName": { "Ref" : "ProjectName" },
+                    "EnvironmentName": { "Ref" : "EnvironmentName" },
+                    "ApplicationEnv": { "Ref" : "ApplicationEnv" },
+                    "LayerName": { "Ref" : "LayerName" },
+                    "InstanceType": "t2.micro.elasticsearch"
+                }
+            }
+        },      
         "RecordSetGroup1": {
             "Type": "AWS::Route53::RecordSetGroup",
             "DependsOn" : "elb1",

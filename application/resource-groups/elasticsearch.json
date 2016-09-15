@@ -1,0 +1,94 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "RDS and deps",
+    "Parameters": {
+        "ProjectName": {
+            "Type": "String",
+            "Description": "The project name to be used",
+            "Default": "een"
+        },
+        "EnvironmentName": {
+            "Type": "String",
+            "Description": "The environment name to be used",
+            "Default": "production"
+        },
+        "ApplicationEnv": {
+            "Type": "String",
+            "Description": "The APPLICATION_ENV to be used",
+            "Default": "production_een_aws"
+        },
+        "LayerName": {
+            "Type": "String",
+            "Description": "The name of the layer e.g. layer1",
+            "Default": "layer1"
+        },
+        "InstanceType": {
+            "Default": "t2.micro.elasticsearch",
+            "Description": "The cloudsearch instance type",
+            "Type": "String",
+            "AllowedValues": [
+                "t2.micro.elasticsearch",
+                "t2.small.elasticsearch",
+                "t2.medium.elasticsearch"
+            ],
+            "ConstraintDescription": "must select a valid instance type."
+        }
+    },
+    "Mappings": {
+    },
+    "Conditions": {
+    },
+    "Resources": {
+        "ElasticsearchDomain": {
+            "Type": "AWS::Elasticsearch::Domain",
+            "Properties": {
+                "DomainName": {
+                    "Fn::Join": ["-", [
+                            "elasticsearch1",
+                            {
+                                "Ref": "LayerName"
+                            },
+                            {
+                                "Ref": "EnvironmentName"
+                            },
+                            {
+                                "Ref": "ProjectName"
+                            }]]
+                },
+                "ElasticsearchClusterConfig": {
+                    "DedicatedMasterEnabled": "false",
+                    "InstanceCount": "1",
+                    "ZoneAwarenessEnabled": "false",
+                    "InstanceType": {
+                        "Ref": "InstanceType"
+                    }
+                },
+                "EBSOptions": {
+                    "EBSEnabled": true,
+                    "Iops": 0,
+                    "VolumeSize": 20,
+                    "VolumeType": "gp2"
+                },
+                "SnapshotOptions": {
+                    "AutomatedSnapshotStartHour": "0"
+                },
+                "AccessPolicies": {
+                    "Version": "2012-10-17",
+                    "Statement": [{
+                            "Effect": "Allow",
+                            "Principal": {
+                                "AWS": "*"
+                            },
+                            "Action": "es:*",
+                            "Resource": "*"
+                        }]
+                },
+                "AdvancedOptions": {
+                    "rest.action.multi.allow_explicit_index": "true"
+                }
+            }
+        }
+    },
+    "Outputs": {
+    }
+}
