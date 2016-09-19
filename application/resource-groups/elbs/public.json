@@ -37,7 +37,7 @@
         "EC2InstanceType": {
             "Description": "Type of EC2 instance to launch",
             "Type": "String",
-            "Default": "m1.small"
+            "Default": "t2.small"
         },
         "EC2AutoScaleGroupSizeMin": {
             "Default": "1",
