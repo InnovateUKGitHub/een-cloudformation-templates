@@ -19,3 +19,5 @@ The CloudFormation templates are structured as follows:
    * shared-resources.json
 
 The s3-upload.sh bash script uploads the CloudFormation templates to S3 ready for deployment.
+
+Note that the DB Password will need to be modified in application/resource-groups/rds.json line 76
